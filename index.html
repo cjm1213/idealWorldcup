@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>이상형월드컵</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" v-cloak>
+    <!-- 1) 시작 화면 -->
+    <section v-if="phase === 'intro'" class="stack">
+      <span class="eyebrow">Ideal Type World Cup</span>
+      <h1>둘 중 하나만 고르세요</h1>
+      <p>대진은 매번 랜덤입니다. 마지막까지 남은 하나가 당신의 이상형.</p>
+
+      <div class="stack tight">
+        <span class="label">테마</span>
+        <div class="row">
+          <button v-for="t in themes" :key="t.id" class="btn sm"
+                  :aria-pressed="themeId === t.id" @click="themeId = t.id">
+            {{ t.label }} <span class="count inherit">{{ t.items.length }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="stack tight">
+        <span class="label">라운드</span>
+        <div class="row">
+          <button v-for="n in ALL_ROUNDS" :key="n" class="btn sm" :disabled="n > pool.length"
+                  :aria-pressed="size === n" @click="size = n">{{ n }}강</button>
+        </div>
+        <p class="small" v-if="maxRound < 128">
+          128강은 후보가 128개 이상인 테마에서 열려요.
+          <template v-if="pool.length > size">후보가 더 많으면 그중 {{ size }}개를 랜덤으로 뽑아요.</template>
+        </p>
+      </div>
+
+      <label class="check">
+        <input id="only-photo" type="checkbox" v-model="onlyPhotos" :disabled="!photoCount">
+        사진 있는 후보만 참가
+        <span class="count">({{ checking ? '확인 중…' : photoCount + ' / ' + themeItems.length }})</span>
+      </label>
+
+      <div>
+        <button class="btn primary" :disabled="!maxRound" @click="start">
+          {{ theme.label }} {{ size }}강 시작하기
+        </button>
+      </div>
+
+      <div class="roster">
+        <span v-for="c in themeItems" :key="c.name" class="chip" :class="{ has: c.img }">{{ c.name }}</span>
+      </div>
+    </section>
+
+    <!-- 2) 대결 화면 -->
+    <section v-else-if="phase === 'play'" class="stack">
+      <div class="board">
+        <h2>{{ roundLabel }}</h2>
+        <span class="count">{{ theme.label }} · {{ matchIndex + 1 }} / {{ current.length / 2 }}</span>
+      </div>
+      <div class="progress"><i :style="{ width: progress + '%' }"></i></div>
+      <div class="match">
+        <candidate-card :item="pair[0]" :state="cardState(0)" @pick="choose(0)"></candidate-card>
+        <div class="vs">VS</div>
+        <candidate-card :item="pair[1]" :state="cardState(1)" @pick="choose(1)"></candidate-card>
+      </div>
+      <div class="row between">
+        <p class="small">카드를 누르거나 키보드 ← → 로 선택</p>
+        <button class="btn sm" @click="phase = 'intro'">그만하기</button>
+      </div>
+    </section>
+
+    <!-- 3) 결과 화면 -->
+    <section v-else class="winner">
+      <candidate-card :item="champion" state="static"></candidate-card>
+      <div class="stack">
+        <span class="trophy">★ {{ theme.label }} {{ size }}강 우승</span>
+        <h1>{{ champion.name }}</h1>
+        <ul class="path">
+          <li v-for="h in championPath" :key="h.round"><b>{{ h.round }}</b> vs {{ h.opponent }}</li>
+        </ul>
+        <div class="row">
+          <button class="btn primary" @click="start">다시 하기</button>
+          <button class="btn" @click="phase = 'intro'">테마 바꾸기</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Vue 3 (전역 빌드) → 우리 코드(ES 모듈) 순서로 로드 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
